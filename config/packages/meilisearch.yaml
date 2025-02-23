@@ -1,0 +1,14 @@
+meilisearch:
+    url: '%env(MEILISEARCH_URL)%'
+    api_key: '%env(MEILISEARCH_API_KEY)%'
+    nbResults: 12  # Nombre de résultats par page, ajustez selon vos besoins
+    indices:
+        # Index pour les produits
+        -   name: products
+            class: App\Entity\Product
+            enable_serializer_groups: true
+
+        # Index pour les articles
+        -   name: articles
+            class: App\Entity\Article
+            enable_serializer_groups: true
