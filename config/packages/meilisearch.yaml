@@ -1,7 +1,7 @@
 meilisearch:
     url: '%env(MEILISEARCH_URL)%'
     api_key: '%env(MEILISEARCH_API_KEY)%'
-    nbResults: 12  # Nombre de résultats par page, ajustez selon vos besoins
+    nbResults: 12  # Nombre de résultats par page
     indices:
         # Index pour les produits
         -   name: products
