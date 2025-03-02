@@ -15,6 +15,7 @@ class Product
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
+    #[Groups(['searchable'])]
     #[ORM\Column]
     private ?int $id = null;
 

@@ -1,6 +1,7 @@
 meilisearch:
     url: '%env(MEILISEARCH_URL)%'
     api_key: '%env(MEILISEARCH_API_KEY)%'
+    prefix: '%env(MEILISEARCH_PREFIX)%'  # Préfixe pour les indices
     nbResults: 12  # Nombre de résultats par page
     indices:
         # Index pour les produits

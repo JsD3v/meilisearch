@@ -1,0 +1,35 @@
+<form {{ attributes }} role="search">
+    <div class="grid">
+        <input
+                type="search"
+                data-model="query"
+                placeholder="Rechercher..."
+                aria-label="Rechercher des articles"
+        >
+    </div>
+
+    <div class="container">
+        <div class="list">
+            {% for article in this.articles %}
+                <article class="article-card">
+                    <div class="article-content">
+                        {% if article.image %}
+                            <img src="{{ article.image }}" alt="{{ article.title }}" class="img-card" />
+                        {% endif %}
+                        <h3>{{ article.title }}</h3>
+                        {% if article.description %}
+                            <p>{{ article.description }}</p>
+                        {% endif %}
+                        <a href="{{ path('app_article_show', {'id': article.id, 'title': article.title})}}" role="button" class="secondary">
+                            Voir l'article
+                        </a>
+                    </div>
+                </article>
+            {% else %}
+                <div class="empty-results">
+                    <p>Aucun article ne correspond à votre recherche.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</form>

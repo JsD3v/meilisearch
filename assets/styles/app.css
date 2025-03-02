@@ -1,3 +1,49 @@
 body {
     background-color: skyblue;
+    font-size: 1rem;
 }
+
+.list{
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 1em;
+}
+.img-card{
+    max-width: 300px;
+    height: auto;
+    object-fit: contain;
+    border-radius:var(--pico-border-radius);
+}
+
+.article-card{
+    max-width: 20rem;
+    padding: 3rem;
+    height: auto;
+    font-size: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: start;
+}
+
+.row article{
+    max-width: 20rem;
+}
+
+article .card-body{
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    padding: 3rem;
+}
+
+.row{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 1em;
+}
+

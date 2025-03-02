@@ -12,6 +12,7 @@ class Article
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
+    #[Groups(['searchable'])]
     #[ORM\Column]
     private ?int $id = null;
 
@@ -29,6 +30,10 @@ class Article
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['searchable'])]
+    private ?string $image = null;
 
     public function getId(): ?int
     {
@@ -79,6 +84,18 @@ class Article
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
 
         return $this;
     }

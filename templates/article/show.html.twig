@@ -1,0 +1,13 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+
+    <div class="container">
+        <article>
+            <img src="{{ article.image }}" alt="{{ article.title }}">
+            <p>{{ article.content }}</p>
+            <p>{{ article.createdAt | date ('d-m-Y') }}</p>
+        </article>
+    </div>
+
+{% endblock %}

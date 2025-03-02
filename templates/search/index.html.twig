@@ -1,0 +1,260 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Recherche{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1>Recherche</h1>
+
+        {% if error is defined and error %}
+            <div class="alert alert-danger">
+                Une erreur est survenue : {{ error }}
+            </div>
+        {% endif %}
+
+        <form id="search-form" class="mb-4">
+            <div class="input-group">
+                <input type="text" id="search-input" name="q" class="form-control" placeholder="Rechercher..." value="{{ query }}" autocomplete="off">
+                <select id="search-type" name="type" class="form-select" style="max-width: 150px;">
+                    <option value="" {% if type is null %}selected{% endif %}>Tous</option>
+                    <option value="products" {% if type == 'products' %}selected{% endif %}>Produits</option>
+                    <option value="articles" {% if type == 'articles' %}selected{% endif %}>Articles</option>
+                </select>
+            </div>
+        </form>
+
+        <div id="search-loader" class="text-center my-4 d-none">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+        </div>
+
+        <div id="search-results">
+            {% if query %}
+                <div class="row">
+                    {# Affichage des produits #}
+                    {% if results.products is defined and results.products|length > 0 %}
+                        <div class="col-md-12 mb-4">
+                            <h2>Produits ({{ results.products|length }})</h2>
+                            <div class="row">
+                                {% for product in results.products %}
+                                    <article class="col-md-4 mb-3">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <img src="{{ product.image }}" alt="{{ product.name }}">
+                                                <h5 class="card-title">{{ product.name }}</h5>
+                                                <h6 class="card-subtitle mb-2 text-muted">{{ product.price|number_format(2, ',', ' ') }} €</h6>
+                                                <p class="card-text">{{ product.Description|slice(0, 100) }}...</p>
+                                                {% if product.category %}
+                                                    <p class="card-text"><small class="text-muted">Catégorie: {{ product.category.name }}</small></p>
+                                                {% endif %}
+                                                <a href="#" class="btn btn-sm btn-primary">Voir détails</a>
+                                            </div>
+                                        </div>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {# Affichage des articles #}
+                    {% if results.articles is defined and results.articles|length > 0 %}
+                        <div class="col-md-12 mb-4">
+                            <h2>Articles ({{ results.articles|length }})</h2>
+                            <div class="row">
+                                {% for article in results.articles %}
+                                    <a href="{{ path('app_article_show', {'id': article.id, 'title': article.title})}}" class="list-group-item list-group-item-action">
+                                        <article class="d-flex w-100 justify-content-between">
+                                            <img src="{{ article.image }}" alt="{{ article.title }}">
+                                            <h5 class="mb-1">{{ article.title }}</h5>
+                                            <p class="mb-1">{{ article.description|slice(0, 150) }}...</p>
+                                        </article>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {# Aucun résultat #}
+                    {% if (results.products is not defined or results.products|length == 0) and
+                        (results.articles is not defined or results.articles|length == 0) %}
+                        <div class="alert alert-info">
+                            Aucun résultat trouvé pour "{{ query }}"
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-input');
+            const searchType = document.getElementById('search-type');
+            const searchResults = document.getElementById('search-results');
+            const searchLoader = document.getElementById('search-loader');
+            const debounceTimeout = 300; // Délai en ms avant de lancer la recherche
+            let timeoutId;
+
+            // Fonction pour effectuer la recherche
+            function performSearch() {
+                const query = searchInput.value.trim();
+                const type = searchType.value;
+
+                if (query.length < 2) {
+                    searchResults.innerHTML = '';
+                    return;
+                }
+
+                // Afficher le loader
+                searchLoader.classList.remove('d-none');
+
+                // Appel à l'API
+                fetch(`{{ path('app_meilisearch_search_api') }}?q=${encodeURIComponent(query)}&type=${encodeURIComponent(type)}`)
+
+
+                    .then(response => {
+                        // Vérifier si la réponse est OK avant de parser le JSON
+                        if (!response.ok) {
+                            throw new Error('Erreur réseau: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('API Response:', data); // Log pour débugger
+
+                        // Mise à jour de l'URL sans recharger la page
+                        const url = new URL(window.location);
+                        url.searchParams.set('q', query);
+                        url.searchParams.set('type', type);
+                        window.history.pushState({}, '', url);
+
+                        // Cacher le loader
+                        searchLoader.classList.add('d-none');
+
+                        // Si la réponse a une structure avec "hits" (comme dans votre JSON exemple)
+                        let processedData = data;
+
+                        if (data.hits) {
+                            // Convertir le format de "hits" au format attendu par displayResults
+                            if (type === 'products' || type === '') {
+                                processedData = {
+                                    products: data.hits || [],
+                                    articles: []
+                                };
+                            } else if (type === 'articles') {
+                                processedData = {
+                                    products: [],
+                                    articles: data.hits || []
+                                };
+                            }
+                        }
+
+                        // Afficher les résultats
+                        displayResults(processedData, query);
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors de la recherche:', error);
+                        searchLoader.classList.add('d-none');
+                        searchResults.innerHTML = `<div class="alert alert-danger">Une erreur est survenue: ${error.message}</div>`;
+                    });
+            }
+
+            // Fonction pour afficher les résultats
+            function displayResults(data, query) {
+                console.log('Processed data for display:', data); // Log pour débugger
+
+                let html = '<div class="row">';
+
+                // Vérifier si nous avons des résultats pour les produits
+                if (data.products && data.products.length > 0) {
+                    html += `<div class="col-md-12 mb-4">
+                <h2>Produits (${data.products.length})</h2>
+                <div class="row">`;
+
+                    data.products.forEach(product => {
+                        // Image par défaut si non disponible
+                        const imageSrc = product.image || '/images/default-product.jpg';
+                        const productName = product.name || 'Produit sans nom';
+                        const productPrice = product.price ? parseFloat(product.price).toLocaleString('fr-FR', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        }) : '0,00';
+                        const productDesc = product.Description ? product.Description.slice(0, 100) + '...' : '';
+                        const productCategory = product.category && product.category.name
+                            ? `<p class="card-text"><small class="text-muted">Catégorie: ${product.category.name}</small></p>`
+                            : '';
+
+                        html += `<article class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <img src="${imageSrc}" alt="${productName}" class="img-fluid mb-2">
+                            <h5 class="card-title">${productName}</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">${productPrice} €</h6>
+                            <p class="card-text">${productDesc}</p>
+                            ${productCategory}
+                            <a href="/product/${product.id}" class="btn btn-sm btn-primary">Voir détails</a>
+                        </div>
+                    </div>
+                </article>`;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                // Vérifier si nous avons des résultats pour les articles
+                if (data.articles && data.articles.length > 0) {
+                    html += `<div class="col-md-12 mb-4">
+                <h2>Articles (${data.articles.length})</h2>
+                <div class="list-group">`;
+
+                    data.articles.forEach(article => {
+                        // Image par défaut si non disponible
+                        const imageSrc = article.image || '/images/default-article.jpg';
+                        const articleTitle = article.title || 'Article sans titre';
+                        const articleDesc = article.description ? article.description.slice(0, 150) + '...' : '';
+
+                        html += `<a href="/article/${article.id}/title/${encodeURIComponent(articleTitle)}" class="list-group-item list-group-item-action">
+                    <article class="d-flex w-100 justify-content-between">
+                        <div class="me-3" style="width: 100px;">
+                            <img src="${imageSrc}" alt="${articleTitle}" class="img-fluid">
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">${articleTitle}</h5>
+                            <p class="mb-1">${articleDesc}</p>
+                        </div>
+                    </article>
+                </a>`;
+                    });
+
+                    html += `</div></div>`;
+                }
+
+                // Si aucun résultat
+                if ((!data.products || data.products.length === 0) &&
+                    (!data.articles || data.articles.length === 0)) {
+                    html += `<div class="alert alert-info">Aucun résultat trouvé pour "${query}"${searchType.value ? ` dans ${searchType.options[searchType.selectedIndex].text.toLowerCase()}` : ''}</div>`;
+                }
+
+                html += '</div>';
+                searchResults.innerHTML = html;
+            }
+
+            // Écouteurs d'événements
+            searchInput.addEventListener('input', function() {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(performSearch, debounceTimeout);
+            });
+
+            searchType.addEventListener('change', performSearch);
+
+            // Lancer une recherche initiale si le champ a déjà une valeur
+            if (searchInput.value.trim().length > 0) {
+                performSearch();
+            }
+        });
+    </script>
+{% endblock %}

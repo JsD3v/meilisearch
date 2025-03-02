@@ -14,6 +14,15 @@
     </head>
     <body>
     <main class="container">
+        <nav>
+            <ul>
+                <li><strong>Meilisearch POC</strong></li>
+            </ul>
+            <ul>
+                <li><a href="{{ path('app_search')}}">Search by Meilisearch</a></li>
+                <li><a href="{{ path('app_index') }}">Twig component</a></li>
+            </ul>
+        </nav>
         {% block body %}{% endblock %}
     </main>
     </body>

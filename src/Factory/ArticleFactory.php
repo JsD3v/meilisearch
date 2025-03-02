@@ -36,6 +36,8 @@ final class ArticleFactory extends PersistentProxyObjectFactory
             'createdAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
             'description' => self::faker()->text(),
             'title' => self::faker()->text(50),
+            'image' => sprintf('https://picsum.photos/640/480?random=%d', self::faker()->unique()->randomNumber()),
+
         ];
     }
 
